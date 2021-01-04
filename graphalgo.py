@@ -3,7 +3,7 @@ import pickle
 from nltk.corpus import wordnet as wn
 import bisect
 import heapq
-
+import os
 class match_generator:
 	def __init__(self,center,limit):
 		self.center = center
@@ -87,7 +87,7 @@ class wrapper_min:
 		return self.m[2]<other.m[2]
 
 
-f = open("edge_file","rb")
+f = os.open("edge_file", os.O_RDONLY)
 b = open("graph","rb")
 
 d = open("entities_data","rb")
@@ -196,8 +196,8 @@ for i,entity in enumerate(entities_data):
 		node_sim = 0
 
 		for m,neighbour in enumerate(graph[i]):
-			f.seek(neighbour[1])
-			new_node_sim = 1 + node_similarity(qedges[j],f.read(byte_dict[neighbour[1]]).decode("utf-8")) + node_similarity(entities_data[neighbour[0]][0],qnodes[j]) # To be Written
+			os.lseek(f,neighbour[1],0)
+			new_node_sim = 1 + node_similarity(qedges[j],os.read(f,byte_dict[neighbour[1]])) + node_similarity(entities_data[neighbour[0]][0],qnodes[j]) # To be Written
 
 			if(new_node_sim > node_sim):
 				node_sim = new_node_sim

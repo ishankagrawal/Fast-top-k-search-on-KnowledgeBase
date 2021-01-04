@@ -65,8 +65,7 @@ for j,line in enumerate(f_facts):
 			#print("To: ",l2,t2)
 			#print("Link: ",l1,j)
 	if(j%100000==0):
-		if(j>2000000):
-			break
+
 		print("Processed: ",j)
 		print("Facts discarded: ",k)
 
