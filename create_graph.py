@@ -6,7 +6,8 @@ f_sameAs = open("yago-wd-sameAs.nt", encoding = "cp437")
 f_facts = open("yago-wd-facts.nt", encoding = "cp437")
 #f_sameAs = open("yago-wd-sameAs.nt", "r")
 #f_facts = open("yago-wd-facts.nt", "r")
-edge_file = open("edge_file","w")
+
+edge_list = []
 byte_dict = {}
 #sys.stdout = open("log.txt","w")
 def getAttrib(link):
@@ -41,6 +42,7 @@ ent_data_dict = {entity[0]: i for i,entity in enumerate(entities_data)}
 print("Populating adj list using facts file and entity data")
 
 cur_byte = 0
+edge_counter = 0
 graph = [[] for _ in range(len(entities_data))]
 k = 0
 for j,line in enumerate(f_facts):
@@ -51,11 +53,10 @@ for j,line in enumerate(f_facts):
 		l2 = getAttrib(l[2])#[36:-1]
 		t2 = ent_data_dict[l2]
 		l1 = getEdge(l[1])#[19:-1]
+		edge_list.append(l1)
+		graph[t0].append([t2,edge_counter])
+		edge_counter+=1
 
-		graph[t0].append([t2,edge_file.tell()])
-		edge_file.write(l1)
-		byte_dict[cur_byte] = edge_file.tell() - cur_byte
-		cur_byte = edge_file.tell()
 	except KeyError:
 		k = k+1
 		#if(k%10000==1):
@@ -88,6 +89,8 @@ f_graph = open("graph", "wb")
 pickle.dump(graph,f_graph)
 f_graph.close()
 
+edge_file = open("edge_file","wb")
+pickle.dump(edge_list,edge_file)
 f_byte_dict= open("byte_dict","wb")
 print("creating offset")
 pickle.dump(byte_dict,f_byte_dict)

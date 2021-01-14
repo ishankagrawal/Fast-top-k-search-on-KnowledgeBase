@@ -1,0 +1,11 @@
+[
+  {"url": "http://www.freebase.com/view/en/hernan_cortes", "targetValue": "(list (description \"Castilleja de la Cuesta\"))", "utterance": "where did hernando cortez die?"}, 
+  {"url": "http://www.freebase.com/view/en/northern_ireland", "targetValue": "(list (description Irish) (description \"English Language\") (description \"Ulster Scots dialects\"))", "utterance": "what language do they speak in northern ireland?"},
+  {"url": "http://www.freebase.com/view/en/nina_dobrev", "targetValue": "(list (description Bulgaria))", "utterance": "what is nina dobrev nationality?"},
+  {"url": "http://www.freebase.com/view/en/romeo_montague", "targetValue": "(list (description \"William Shakespeare\"))", "utterance": "who created the character of romeo?"},
+   {"url": "http://www.freebase.com/view/en/lee_corso", "targetValue": "(list (description \"Florida State University\"))", "utterance": "where did lee corso go to college?"},
+   {"url": "http://www.freebase.com/view/en/walt_disney", "targetValue": "(list (description \"Roy O. Disney\"))", "utterance": "what is the name of walt disney's son?"},
+   {"url": "http://www.freebase.com/view/en/robert_blake_1933", "targetValue": "(list (description \"Alfalfa's Double\") (description Busting) (description \"Captain Spanky's Show Boat\") (description \"Bubbling Troubles\") (description \"Dancing Romeo\") (description \"Dad for a Day\") (description \"Bridal Suite\") (description \"All About Hash\") (description \"Coast to Coast\") (description \"Auto Antics\"))", "utterance": "what movies did robert blake play in?"},
+   {"url": "http://www.freebase.com/view/en/meg_griffin", "targetValue": "(list (description \"Lacey Chabert\"))", "utterance": "who was the original voice of meg on family guy?"},
+     {"url": "http://www.freebase.com/view/en/martin_luther_king_jr", "targetValue": "(list (description \"Civil rights movement\") (description \"Civil disobedience\") (description Nonviolence))", "utterance": "what organization did martin luther king lead?"}
+    ]

@@ -1,18 +1,23 @@
 
 import pickle
-from nltk.corpus import wordnet as wn
+
 import bisect
 import heapq
-import os
+import Sim 
+import queryToGraph as qg
+import json
+import time
+
+weights = [1.0,0.7,0.3,0.25]
 class match_generator:
-	def __init__(self,center,limit):
+	def __init__(self,center,limit,qhead,qedges,qnodes):
 		self.center = center
 		self.sim_matrix = [[[0,0] for i in range(len(graph[center]))] for j in range(len(qnodes))]
 		for i,node in enumerate(qnodes):
 			for j,neighbour in enumerate(graph[center]):
 				
-				f.seek(neighbour[1])
-				self.sim_matrix[i][j][0] = 1 + node_similarity(qhead,entities_data[self.center][0]) + node_similarity(node,entities_data[neighbour[0]][0]) + node_similarity(qedges[i],f.read(byte_dict[neighbour[1]]).decode("utf-8"))
+				
+				self.sim_matrix[i][j][0] = 1 + Sim.node_similarity(qhead,entities_data[self.center][0],weights) + Sim.node_similarity(node,entities_data[neighbour[0]][0],weights) + Sim.edge_similarity(qedges[i],edges[neighbour[1]],weights)
 				self.sim_matrix[i][j][1] = j
 				for row in self.sim_matrix:
 					row.sort(key = lambda item: -item[0])
@@ -62,7 +67,7 @@ def node_similarity(n1,n2):
 				res+=0.2
 	
 	return res
-def edge_similarity(e1,e2):
+"""def edge_similarity(e1,e2):
 	bag1 = e1.split()
 	bag2 = e2.split()
 	res = 0.0
@@ -74,7 +79,7 @@ def edge_similarity(e1,e2):
 				x = w1[0].wup_similarity(w2[0])
 				if(x is not None):
 					res+=w1[0].wup_similarity(w2[0])
-	return res
+	return res"""
 class wrapper:
 	def __init__(self,match):
 		self.m = match
@@ -87,7 +92,7 @@ class wrapper_min:
 		return self.m[2]<other.m[2]
 
 
-f = os.open("edge_file", os.O_RDONLY)
+f = open("edge_file","rb")
 b = open("graph","rb")
 
 d = open("entities_data","rb")
@@ -100,6 +105,8 @@ entities_data = pickle.load(d)
 d.close()
 byte_dict = pickle.load(e)
 e.close()
+edges = pickle.load(f)
+f.close()
 print("loaded")
 
 
@@ -168,97 +175,195 @@ for i in range(20):
 # 		for ed in graph[int(ent_dict[res])]:
 # 			f.seek(ed[1])
 # 			print(str(f.read(byte_dict[ed[1]])) + " " + entities[ed[0]][0])
-
+'''
 qhead = str(input("Enter head of query: "))
 qnodes = str(input("Enter nodes, comma-separated: ")).split(",")
 qedges = input("Enter edges:").split(",")
 qlen = len(qnodes) # This does not include head
+'''
+
+"""question = input("Enter The Query")
+qhead,qnodes,qedges,m_edge,isCenter = qg.parse_q(question)
+print ((qhead,qnodes,qedges,m_edge,isCenter))
+
 k = int(input("Number of matches needed: "))
-
-matches = []
-# Each entry in matches has a ent id (head), a list of ent ids, and a sim score
-# matches is sorted as per sim scores at the end of each round of algo
-
-# First half of algo
-# Find top match with each possible head
-print("Entites",len(entities_data))
-for i,entity in enumerate(entities_data):
-
-	node_match_list = [] # id, sim pairs
-	match_sim = node_similarity(entity[0],qhead)
-
-	if len(graph[i]) == 0:
-		continue
-	# Careful, len(node_match_list)	might now be smaller than len(entities_data)
-
-	for j,qnode in enumerate(qnodes):
-		node_match = None
-		node_sim = 0
-
-		for m,neighbour in enumerate(graph[i]):
-			os.lseek(f,neighbour[1],0)
-			new_node_sim = 1 + node_similarity(qedges[j],os.read(f,byte_dict[neighbour[1]])) + node_similarity(entities_data[neighbour[0]][0],qnodes[j]) # To be Written
-
-			if(new_node_sim > node_sim):
-				node_sim = new_node_sim
-				node_match = neighbour[0]
-
-		node_match_list.append(node_match)
-		match_sim += node_sim
-
-	matches.append([i,node_match_list, match_sim])
-	if(i%100==0):
-		print(i," nodes done!")
+"""
+k = 5
+"""
+isCenter = False
+if(qhead=="what"):
+	isCenter = True
+	qhead = ""
+for j,nd in enumerate(qnodes):
+	if(nd=="what"):
+		m_edge = qedges[j]
+	qnodes[j] = ""
+	"""
 
 
 
 
-matches = sorted(matches,key = lambda item: -item[2])
+def get_topk_matches(qhead,qnodes,qedges):
+		matches = []
+		node_matches = []
+		# Each entry in matches has a ent id (head), a list of ent ids, and a sim score
+		# matches is sorted as per sim scores at the end of each round of algo
 
-final_matches = []
-matches = matches[:k]
-match_dict = {}
-match_heap = [wrapper(match) for match in matches]
-match_generators = [match_generator(match[0],k) for match in matches]
-for j,match in enumerate(matches):
-	match_dict[match[0]] = match_generators[j] 
-heapq.heapify(match_heap)
+		# First half of algo
+		# Find top match with each possible head
+		print("Entites",len(entities_data))
+		for i,entity in enumerate(entities_data):
 
-match_iter = 0
-while(match_iter < k):
-	best_match = heapq.heappop(match_heap)
-	
-	next_match = match_dict[best_match.m[0]].get_next()
-	
+			node_match_list = [] # id, sim pairs
+			match_sim = Sim.node_similarity(entity[0],qhead,weights)
 
-	if(next_match is not None):
+
+			if len(graph[i]) == 0:
+				continue
+			# Careful, len(node_match_list)	might now be smaller than len(entities_data)
+
+			for j,qnode in enumerate(qnodes):
+				node_match = None
+				node_sim = 0
+
+				for m,neighbour in enumerate(graph[i]):
+					
+					new_node_sim = 1 +  Sim.node_similarity(entities_data[neighbour[0]][0],qnodes[j],weights) #+ Sim.node_similarity(qedges[j],edges[neighbour[1]],weights) 
+
+					if(new_node_sim > node_sim):
+						node_sim = new_node_sim
+						node_match = neighbour[0]
+
+				node_match_list.append(node_match)
+				match_sim += node_sim
+
+
+			matches.append([i,node_match_list, match_sim])
+			if(i%100000==0):
+				print(i," nodes done!")
+
+
+
+		print("sorting matches")
+		matches = sorted(matches,key = lambda item: -item[2])
+
+		final_matches = []
+		matches = matches[:k]
+		match_dict = {}
+		match_heap = [wrapper(match) for match in matches]
+		match_generators = [match_generator(match[0],k,qhead,qedges,qnodes) for match in matches]
+		for j,match in enumerate(matches):
+			match_dict[match[0]] = match_generators[j] 
+		heapq.heapify(match_heap)
+
+		match_iter = 0
+		while(match_iter < k):
+			best_match = heapq.heappop(match_heap)
+			
+			next_match = match_dict[best_match.m[0]].get_next()
+			
+
+			if(next_match is not None):
+				
+				final_matches.append(next_match)
+				to_push = wrapper([match_dict[best_match.m[0]].center,[x for x in next_match.m[1]],next_match.m[2]])
+				heapq.heappush(match_heap,to_push)
+				match_iter +=1
+
+
+
+
+		'''for match in matches:
+			for node in match[1]:
+				print(str(entities_data[node])+ " " + str(entities_data[match[0]]))
+			print(match[2])'''
+
+		print("Top-K matches are")
+
+		for temp in range(len(final_matches)):
+			final_matches[temp] = final_matches[temp].m
+		final_matches.sort(key = lambda item: -item[2])
+		print(final_matches)
+		match_count = 1
+		for x in range(k):
+			print("Match: ",match_count)
+			try:
+				for y in final_matches[x][1]:
+					
+					#print(entities_data[final_matches[x][0]][0] + " " + edges[graph[final_matches[x][0]][y][1]] + " " +  entities_data[graph[final_matches[x][0]][y][0]][0])
+					node_matches.append(entities_data[final_matches[x][0]][0] + " " + edges[graph[final_matches[x][0]][y][1]] + " " +  entities_data[graph[final_matches[x][0]][y][0]][0])
+				match_count+=1
+			except :
+				print("Couldn't find more matches")
+		return(final_matches,node_matches)
+
+
+
+def get_topk_answers(m_edge,isCenter,final_matches):
+	res = []
+	for center in final_matches:
+		if(isCenter):
+			print(entities_data[center[0]][0])
+		else:
+			
+			top_score = Sim.edge_similarity(m_edge,edges[graph[center[0]][center[1][0]][1]],weights)
+			top_edge = center[1][0]
+			for ed in range(len(graph[center[0]])):
+				if(Sim.edge_similarity(m_edge,edges[graph[center[0]][ed][1]],weights)>top_score):
+					top_edge = ed
+					top_score = Sim.edge_similarity(m_edge,edges[graph[center[0]][ed][1]],weights)
+			#print(entities_data[graph[center[0]][top_edge][0]][0])
+			res.append([entities_data[graph[center[0]][top_edge][0]][0],entities_data[graph[center[0]][top_edge][0]][1]])
+	return res
+
+
+
+ques_file = open("webquestions.json","r")
+ques_data = json.load(ques_file)
+ques_file.close()
+res_file = open("answers","w")
+time_file = open("query_times","w")
+match_file = open("matches","w")
+qiter = 4
+original_ans = open("original_ans","w")
+for q in ques_data:
+	if(qiter%3==0):
+		ques = q["utterance"]
+		original_ans.write(str(q["targetValue"]) + "\n")
+		qhead,qnodes,qedges,m_edge,isCenter = qg.parse_q(ques)
+		s = time.time()
+		final_matches,node_matches = get_topk_matches(qhead,qnodes,qedges)
+		final_answers = get_topk_answers(m_edge,isCenter,final_matches)
+		e = time.time()
+		time_file.write("Question: " + ques + "\n \n")
+		time_file.write("Time taken: " + str(e-s) + " seconds \n \n")
+		res_file.write("Question: " + ques + "\n" + "------------------" + "\n")
+		res_file.write("Top Answers" +  "\n" + "------------------" + "\n")
+		for ans in final_answers:
+			res_file.write(ans[0] + " ==> www.wikidata.org/wiki/" + ans[1] +  "\n")
+		res_file.write("\n")
+		match_file.write("\n" +    "Question: " + ques + "\n" + "--------------" + '\n')
+		match_file.write("Top Matches" + ques + "\n" + "--------------" + '\n')
+
+		for m in node_matches:
+			match_file.write(m + "\n")
+		match_file.write("\n")
+	if(qiter>16):
+		break
+	qiter+=1
+res_file.close()
+match_file.close()
+time_file.close()
+
+
+
+
+
+
+
+
+
 		
-		final_matches.append(next_match)
-		to_push = wrapper([match_dict[best_match.m[0]].center,[x for x in next_match.m[1]],next_match.m[2]])
-		heapq.heappush(match_heap,to_push)
-		match_iter +=1
-
-
-
-print("Top-K matches are")
-
-for temp in range(len(final_matches)):
-	final_matches[temp] = final_matches[temp].m
-print(final_matches)
-match_count = 1
-for x in range(k):
-	print("Match: ",match_count)
-	try:
-		for y in final_matches[x][1]:
-			f.seek(graph[final_matches[x][0]][y][1])
-			print(entities_data[final_matches[x][0]][0] + " " + f.read(byte_dict[graph[final_matches[x][0]][y][1]]).decode("utf-8") + " " +  entities_data[graph[final_matches[x][0]][y][0]][0])
-		match_count+=1
-	except :
-		print("Couldn't find more matches")
-
-
-
-		
 
 
 
@@ -272,13 +377,9 @@ for x in range(k):
 
 
 
-'''
 
-for match in matches:
-	for node in match[1]:
-		print(str(entities_data[node])+ " " + str(entities_data[match[0]]))
-print(matches)
-'''
+
+
 
 # Second half of algo
 
@@ -293,5 +394,5 @@ print(matches)
 
 
 print("ok")
-f.close()
+
 print("closed")
