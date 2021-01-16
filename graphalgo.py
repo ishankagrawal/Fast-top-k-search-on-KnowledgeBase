@@ -303,7 +303,7 @@ def get_topk_answers(m_edge,isCenter,final_matches):
 	res = []
 	for center in final_matches:
 		if(isCenter):
-			print(entities_data[center[0]][0])
+			res.append([entities_data[center[0]][0],entities_data[center[0]][1]])
 		else:
 			
 			top_score = Sim.edge_similarity(m_edge,edges[graph[center[0]][center[1][0]][1]],weights)
@@ -318,38 +318,47 @@ def get_topk_answers(m_edge,isCenter,final_matches):
 
 
 
-ques_file = open("webquestions.json","r")
+ques_file = open("ques_test.txt","r")
+ques_data = []
 ques_data = json.load(ques_file)
+"""for line in ques_file:
+	data = line.split()
+	ques_data.append(" ".join(data[3:]))
+	print(ques_data[-1])"""
 ques_file.close()
-res_file = open("answers","w")
-time_file = open("query_times","w")
-match_file = open("matches","w")
-qiter = 4
-original_ans = open("original_ans","w")
+res_file = open("answers","wb")
+time_file = open("query_times","wb")
+match_file = open("matches","wb")
+qiter = 0
+original_ans = open("original_ans","wb")
 for q in ques_data:
-	if(qiter%3==0):
-		ques = q["utterance"]
-		original_ans.write(str(q["targetValue"]) + "\n")
-		qhead,qnodes,qedges,m_edge,isCenter = qg.parse_q(ques)
+	if(qiter%1==0):
+		ques = q
+		print(q)
+		#original_ans.write((str(q["targetValue"]) + "\n").encode("utf-8"))
+		if(q[-1]=="False"):
+			q[-1] = False
+		else:
+			q[-1] = True
+		qhead,qnodes,qedges,m_edge,isCenter =   q #qg.parse_q(ques)
+
 		s = time.time()
 		final_matches,node_matches = get_topk_matches(qhead,qnodes,qedges)
 		final_answers = get_topk_answers(m_edge,isCenter,final_matches)
 		e = time.time()
-		time_file.write("Question: " + ques + "\n \n")
-		time_file.write("Time taken: " + str(e-s) + " seconds \n \n")
-		res_file.write("Question: " + ques + "\n" + "------------------" + "\n")
-		res_file.write("Top Answers" +  "\n" + "------------------" + "\n")
+		time_file.write(("Question: " + str(ques) + "\n \n").encode("utf-8"))
+		time_file.write(("Time taken: " + str(e-s) + " seconds \n \n").encode("utf-8"))
+		res_file.write(("Question: " + str(ques) + "\n" + "------------------" + "\n").encode("utf-8"))
+		res_file.write(("Top Answers" +  "\n" + "------------------" + "\n").encode("utf-8"))
 		for ans in final_answers:
-			res_file.write(ans[0] + " ==> www.wikidata.org/wiki/" + ans[1] +  "\n")
-		res_file.write("\n")
-		match_file.write("\n" +    "Question: " + ques + "\n" + "--------------" + '\n')
-		match_file.write("Top Matches" + ques + "\n" + "--------------" + '\n')
+			res_file.write((ans[0] + " ==> www.wikidata.org/wiki/" + ans[1] +  "\n").encode("utf-8"))
+		res_file.write(("\n").encode("utf-8"))
+		match_file.write(("\n" +    "Question: " + str(ques) + "\n" + "--------------" + '\n').encode("utf-8"))
+		match_file.write(("Top Matches"  "\n" + "--------------" + '\n').encode("utf-8"))
 
 		for m in node_matches:
-			match_file.write(m + "\n")
-		match_file.write("\n")
-	if(qiter>16):
-		break
+			match_file.write((m + "\n").encode("utf-8"))
+		match_file.write(("\n").encode("utf-8"))
 	qiter+=1
 res_file.close()
 match_file.close()
